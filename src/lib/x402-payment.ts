@@ -49,9 +49,6 @@ export class X402Payment {
     this.facilitatorUrl = CONFIG.x402.facilitator;
   }
 
-  /**
-   * Create a 402 Payment Required response
-   */
   createPaymentRequirement(
     amount: string,
     resource: string,
@@ -77,15 +74,11 @@ export class X402Payment {
     };
   }
 
-  /**
-   * Verify payment authorization
-   */
   async verifyPayment(
     authorization: PaymentAuthorization,
     requiredAmount: string
   ): Promise<PaymentVerification> {
     try {
-      // Basic validation
       if (!this.validateAuthorization(authorization, requiredAmount)) {
         return {
           verified: false,
@@ -95,7 +88,6 @@ export class X402Payment {
         };
       }
 
-      // Verify signature and process payment through facilitator
       const result = await this.processFacilitatorPayment(authorization);
 
       if (!result.success) {
@@ -109,7 +101,7 @@ export class X402Payment {
 
       return {
         verified: true,
-        amount: parseFloat(authorization.value) / 1_000_000, // Convert from USDC decimals
+        amount: parseFloat(authorization.value) / 1_000_000,
         payer: authorization.from,
         transactionHash: result.transactionHash,
       };
@@ -124,23 +116,17 @@ export class X402Payment {
     }
   }
 
-  /**
-   * Validate authorization parameters
-   */
   private validateAuthorization(auth: PaymentAuthorization, requiredAmount: string): boolean {
-    // Check scheme
     if (auth.scheme !== 'eip3009') {
       console.error('Invalid payment scheme:', auth.scheme);
       return false;
     }
 
-    // Check recipient
     if (auth.to.toLowerCase() !== CONFIG.wallets.base.toLowerCase()) {
       console.error('Invalid payment recipient:', auth.to);
       return false;
     }
 
-    // Check amount
     const authAmount = BigInt(auth.value);
     const required = BigInt(requiredAmount);
     if (authAmount < required) {
@@ -148,7 +134,6 @@ export class X402Payment {
       return false;
     }
 
-    // Check timestamp validity
     const now = Math.floor(Date.now() / 1000);
     const validAfter = parseInt(auth.validAfter);
     const validBefore = parseInt(auth.validBefore);
@@ -158,13 +143,11 @@ export class X402Payment {
       return false;
     }
 
-    // Check nonce format
     if (!auth.nonce || auth.nonce.length < 32) {
       console.error('Invalid nonce');
       return false;
     }
 
-    // Check signature format
     if (!auth.signature || !auth.signature.match(/^0x[a-fA-F0-9]{130}$/)) {
       console.error('Invalid signature format');
       return false;
@@ -173,17 +156,12 @@ export class X402Payment {
     return true;
   }
 
-  /**
-   * Process payment through Daydreams facilitator
-   */
   private async processFacilitatorPayment(
     auth: PaymentAuthorization
   ): Promise<{ success: boolean; transactionHash?: Hash; error?: string }> {
     try {
       console.log('🔄 Processing payment through facilitator:', this.facilitatorUrl);
 
-      // In production, this would call the actual facilitator API
-      // For now, we'll simulate the facilitator processing
       const response = await fetch(`${this.facilitatorUrl}/process`, {
         method: 'POST',
         headers: {
@@ -198,7 +176,6 @@ export class X402Payment {
       });
 
       if (!response.ok) {
-        // Facilitator simulation: generate mock transaction hash for development
         if (CONFIG.server.nodeEnv === 'development') {
           console.warn('⚠️ Development mode: simulating facilitator response');
           return {
@@ -212,13 +189,12 @@ export class X402Payment {
         throw new Error(`Facilitator error: ${response.statusText}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as { transactionHash: string };
       return {
         success: true,
-        transactionHash: result.transactionHash,
+        transactionHash: result.transactionHash as Hash,
       };
     } catch (error: any) {
-      // Development fallback
       if (CONFIG.server.nodeEnv === 'development') {
         console.warn('⚠️ Facilitator unavailable, using development mode');
         return {
@@ -237,9 +213,6 @@ export class X402Payment {
     }
   }
 
-  /**
-   * Parse X-PAYMENT header
-   */
   parsePaymentHeader(header: string): PaymentAuthorization | null {
     try {
       const payment = JSON.parse(header);
