@@ -9,19 +9,16 @@ import { verifyHandler } from './routes/verify.js';
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging
 app.use((req, res, next) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] ${req.method} ${req.path}`);
   next();
 });
 
-// Landing page
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -201,12 +198,10 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Favicon
 app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
 });
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
@@ -217,11 +212,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes
 app.get('/api/status', statusHandler);
 app.get('/api/verify', verifyHandler);
 
-// Proof generation
 app.get('/api/generate-proof', generateProofInfoHandler);
 app.post(
   '/api/generate-proof',
@@ -232,7 +225,6 @@ app.post(
   generateProofHandler
 );
 
-// Proof verification
 app.get('/api/verify-proof', verifyProofInfoHandler);
 app.post(
   '/api/verify-proof',
@@ -243,7 +235,6 @@ app.post(
   verifyProofHandler
 );
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',
@@ -257,7 +248,6 @@ app.use((req, res) => {
   });
 });
 
-// Error handler
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Server error:', err);
   res.status(500).json({
@@ -266,16 +256,13 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   });
 });
 
-// Start server
 const PORT = CONFIG.server.port;
 const HOST = CONFIG.server.host;
 
 async function startServer() {
   try {
-    // Validate configuration
     validateConfig();
 
-    // Start listening
     app.listen(PORT, HOST, () => {
       console.log('');
       console.log('🔮 =======================================');
@@ -313,7 +300,6 @@ async function startServer() {
   }
 }
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('\n🛑 SIGTERM received, shutting down gracefully...');
   process.exit(0);
@@ -324,32 +310,6 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Start the server
 startServer();
 
 export default app;
-```
-
-## 📁 File 15: `LICENSE`
-```
-MIT License
-
-Copyright (c) 2025 Lucid Oracle Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
