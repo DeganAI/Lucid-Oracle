@@ -12,34 +12,39 @@ export interface PaymentOptions {
   outputSchema?: any;
 }
 
-/**
- * x402 payment middleware
- * Enforces payment requirement and verifies payment authorization
- */
 export function requirePayment(options: PaymentOptions) {
   return async (req: X402Request, res: Response, next: NextFunction) => {
     try {
-      // Get amount in USDC format
       const amountUSDC = typeof options.amount === 'number' 
         ? (options.amount * 1_000_000).toString()
         : options.amount.priceUSDC;
 
-      // Check for X-PAYMENT header
       const paymentHeader = req.headers['x-payment'] as string;
 
       if (!paymentHeader) {
-        // No payment provided - return 402 Payment Required
-        const requirement = x402Payment.createPaymentRequirement(
-          amountUSDC,
-          `${req.protocol}://${req.get('host')}${req.originalUrl}`,
-          options.description,
-          options.outputSchema
-        );
-
-        return res.status(402).json(requirement);
+        const protocol = req.protocol === 'http' && req.get('host')?.includes('railway.app') ? 'https' : req.protocol;
+        const fullUrl = `${protocol}://${req.get('host')}${req.originalUrl}`;
+        
+        return res.status(402).json({
+          x402Version: 1,
+          error: "Payment Required",
+          accepts: [
+            {
+              scheme: "exact",
+              network: CONFIG.network.name,
+              maxAmountRequired: amountUSDC,
+              resource: fullUrl,
+              description: options.description,
+              mimeType: "application/json",
+              payTo: CONFIG.wallets.base,
+              maxTimeoutSeconds: 60,
+              asset: CONFIG.network.usdcAddress,
+              ...(options.outputSchema && { outputSchema: options.outputSchema })
+            }
+          ]
+        });
       }
 
-      // Parse payment authorization
       const authorization = x402Payment.parsePaymentHeader(paymentHeader);
 
       if (!authorization) {
@@ -49,24 +54,33 @@ export function requirePayment(options: PaymentOptions) {
         });
       }
 
-      // Verify payment
       console.log('💰 Verifying payment authorization...');
       const verification = await x402Payment.verifyPayment(authorization, amountUSDC);
 
       if (!verification.verified) {
+        const protocol = req.protocol === 'http' && req.get('host')?.includes('railway.app') ? 'https' : req.protocol;
+        const fullUrl = `${protocol}://${req.get('host')}${req.originalUrl}`;
+        
         return res.status(402).json({
-          error: 'Payment Verification Failed',
-          message: verification.error || 'Payment could not be verified',
-          paymentRequirement: x402Payment.createPaymentRequirement(
-            amountUSDC,
-            `${req.protocol}://${req.get('host')}${req.originalUrl}`,
-            options.description,
-            options.outputSchema
-          ),
+          x402Version: 1,
+          error: "Payment Required",
+          accepts: [
+            {
+              scheme: "exact",
+              network: CONFIG.network.name,
+              maxAmountRequired: amountUSDC,
+              resource: fullUrl,
+              description: options.description,
+              mimeType: "application/json",
+              payTo: CONFIG.wallets.base,
+              maxTimeoutSeconds: 60,
+              asset: CONFIG.network.usdcAddress,
+              ...(options.outputSchema && { outputSchema: options.outputSchema })
+            }
+          ]
         });
       }
 
-      // Payment verified - attach to request and continue
       req.x402Payment = verification;
       console.log(`✅ Payment verified: ${verification.amount} USDC from ${verification.payer}`);
       
@@ -81,9 +95,6 @@ export function requirePayment(options: PaymentOptions) {
   };
 }
 
-/**
- * Optional payment middleware (for free-tier endpoints)
- */
 export function optionalPayment(options: PaymentOptions) {
   return async (req: X402Request, res: Response, next: NextFunction) => {
     const paymentHeader = req.headers['x-payment'] as string;
