@@ -20,14 +20,28 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
+  const host = req.get('host') || 'lucid-oracle-production.up.railway.app';
+  const protocol = req.protocol || 'https';
+  const baseUrl = `${protocol}://${host}`;
+  
   res.send(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lucid Oracle - ZK Proof Generation Service</title>
-  <meta name="description" content="Production-ready zero-knowledge proof generation with x402 micropayments on Base L2">
+  <title>Lucid Oracle - Zero-Knowledge Proof Generation Service</title>
+  <meta name="description" content="Production-ready zero-knowledge proof generation with x402 micropayments on Base L2. Generate zk-SNARK proofs with instant USDC payments.">
+  <meta property="og:title" content="Lucid Oracle - ZK Proof Generation Service">
+  <meta property="og:description" content="Production-ready zero-knowledge proof generation with x402 micropayments on Base L2">
+  <meta property="og:image" content="${baseUrl}/og-image.png">
+  <meta property="og:url" content="${baseUrl}">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Lucid Oracle - ZK Proof Generation Service">
+  <meta name="twitter:description" content="Production-ready zero-knowledge proof generation with x402 micropayments on Base L2">
+  <meta name="twitter:image" content="${baseUrl}/og-image.png">
+  <link rel="icon" type="image/png" href="${baseUrl}/favicon.png">
   <style>
     * {
       margin: 0;
@@ -199,7 +213,40 @@ app.get('/', (req, res) => {
 });
 
 app.get('/favicon.ico', (req, res) => {
-  res.status(204).end();
+  res.redirect(301, '/favicon.png');
+});
+
+app.get('/favicon.png', (req, res) => {
+  res.setHeader('Content-Type', 'image/svg+xml');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    <rect width="100" height="100" fill="url(#grad)" rx="15"/>
+    <text x="50" y="70" font-size="60" text-anchor="middle" fill="white">🔮</text>
+  </svg>`;
+  res.send(svg);
+});
+
+app.get('/og-image.png', (req, res) => {
+  res.setHeader('Content-Type', 'image/svg+xml');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+    <defs>
+      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    <rect width="1200" height="630" fill="url(#grad)"/>
+    <text x="600" y="220" font-size="80" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial, sans-serif">🔮 Lucid Oracle</text>
+    <text x="600" y="310" font-size="42" text-anchor="middle" fill="white" font-family="Arial, sans-serif" opacity="0.95">Zero-Knowledge Proof Generation</text>
+    <text x="600" y="400" font-size="36" text-anchor="middle" fill="white" font-family="Arial, sans-serif" opacity="0.85">x402 Micropayments • Base L2 • USDC</text>
+    <text x="600" y="490" font-size="32" text-anchor="middle" fill="#fbbf24" font-family="Arial, sans-serif" font-weight="bold">$0.02 - $0.10 per proof</text>
+  </svg>`;
+  res.send(svg);
 });
 
 app.get('/health', (req, res) => {
