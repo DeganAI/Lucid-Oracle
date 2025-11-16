@@ -96,15 +96,60 @@ export function generateProofInfoHandler(req: X402Request, res: Response) {
   const fullUrl = `${protocol}://${req.get('host')}${req.originalUrl}`;
   
   res.status(402).json({
+    x402Version: 1,
     error: "Payment Required",
-    message: "Generate zero-knowledge proof",
-    paymentRequirement: {
-      maxAmountRequired: CONFIG.pricing.standard.priceUSDC,
-      resource: fullUrl,
-      payTo: CONFIG.wallets.base,
-      asset: CONFIG.network.usdcAddress,
-      network: CONFIG.network.name,
-      scheme: "exact"
-    }
+    accepts: [
+      {
+        scheme: "exact",
+        network: "base",
+        maxAmountRequired: CONFIG.pricing.standard.priceUSDC,
+        resource: fullUrl,
+        description: "Generate zero-knowledge proof",
+        mimeType: "application/json",
+        payTo: CONFIG.wallets.base,
+        maxTimeoutSeconds: 60,
+        asset: CONFIG.network.usdcAddress,
+        outputSchema: {
+          input: {
+            type: "http",
+            method: "POST",
+            bodyType: "json",
+            bodyFields: {
+              circuit: {
+                type: "string",
+                required: true,
+                description: "Circuit type to use for proof generation",
+                enum: ["hashPreimage", "rangeProof", "customArithmetic"]
+              },
+              inputs: {
+                type: "object",
+                required: true,
+                description: "Circuit-specific inputs (e.g., {preimage: 'secret'})"
+              },
+              tier: {
+                type: "string",
+                required: true,
+                description: "Pricing tier (basic: $0.02, standard: $0.05, premium: $0.10)",
+                enum: ["basic", "standard", "premium"]
+              }
+            }
+          },
+          output: {
+            success: { type: "boolean" },
+            proof: { type: "object", description: "zk-SNARK proof in Groth16 format" },
+            publicSignals: { type: "array", description: "Public outputs from circuit" },
+            metadata: {
+              type: "object",
+              properties: {
+                proofId: { type: "string" },
+                circuit: { type: "string" },
+                tier: { type: "string" },
+                executionTime: { type: "number" }
+              }
+            }
+          }
+        }
+      }
+    ]
   });
 }
