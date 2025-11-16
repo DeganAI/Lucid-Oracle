@@ -51,9 +51,6 @@ export class ZKProofGenerator {
     }
   }
 
-  /**
-   * Generate a ZK proof
-   */
   async generate(request: ProofRequest): Promise<ProofResult> {
     const startTime = Date.now();
     const proofId = nanoid(12);
@@ -61,20 +58,17 @@ export class ZKProofGenerator {
     try {
       await this.initialize();
 
-      // Validate tier
       const tierConfig = CONFIG.pricing[request.tier];
       if (!tierConfig) {
         throw new Error(`Invalid tier: ${request.tier}`);
       }
 
-      // Validate circuit support
       if (!CONFIG.circuits.supportedCircuits.includes(request.circuit)) {
         throw new Error(`Unsupported circuit: ${request.circuit}`);
       }
 
       console.log(`🔒 Generating proof ${proofId} for circuit ${request.circuit} (tier: ${request.tier})`);
 
-      // Process circuit-specific logic
       let processedInputs: any;
       switch (request.circuit) {
         case 'hashPreimage':
@@ -90,7 +84,6 @@ export class ZKProofGenerator {
           throw new Error(`Circuit not implemented: ${request.circuit}`);
       }
 
-      // Generate the actual proof
       const { proof, publicSignals } = await this.generateProof(
         request.circuit,
         processedInputs,
@@ -123,9 +116,6 @@ export class ZKProofGenerator {
     }
   }
 
-  /**
-   * Verify a ZK proof
-   */
   async verify(request: VerificationRequest): Promise<VerificationResult> {
     const startTime = Date.now();
 
@@ -134,10 +124,8 @@ export class ZKProofGenerator {
 
       console.log(`🔍 Verifying proof for circuit ${request.circuit}`);
 
-      // Load verification key
       const vKey = await this.loadVerificationKey(request.circuit);
 
-      // Verify the proof
       const verified = await groth16.verify(
         vKey,
         request.publicSignals,
@@ -166,18 +154,13 @@ export class ZKProofGenerator {
     }
   }
 
-  /**
-   * Process hash preimage inputs
-   */
   private async processHashPreimage(inputs: Record<string, any>): Promise<any> {
     if (!inputs.preimage) {
       throw new Error('Missing required input: preimage');
     }
 
-    // Convert string to field element
     const preimageValue = BigInt(this.stringToFieldElement(inputs.preimage));
     
-    // Calculate Poseidon hash
     const hash = this.poseidon([preimageValue]);
     const hashValue = this.poseidon.F.toString(hash);
 
@@ -187,9 +170,6 @@ export class ZKProofGenerator {
     };
   }
 
-  /**
-   * Process range proof inputs
-   */
   private async processRangeProof(inputs: Record<string, any>): Promise<any> {
     if (inputs.value === undefined) {
       throw new Error('Missing required input: value');
@@ -210,9 +190,6 @@ export class ZKProofGenerator {
     };
   }
 
-  /**
-   * Process custom arithmetic inputs
-   */
   private async processCustomArithmetic(inputs: Record<string, any>): Promise<any> {
     const { a, b, operation } = inputs;
 
@@ -245,9 +222,6 @@ export class ZKProofGenerator {
     };
   }
 
-  /**
-   * Generate proof with timeout
-   */
   private async generateProof(
     circuit: string,
     inputs: any,
@@ -259,8 +233,6 @@ export class ZKProofGenerator {
       }, timeoutMs);
 
       try {
-        // In production, this would load actual circuit files
-        // For now, we'll create a mock proof structure
         const proof = await this.generateMockProof(circuit, inputs);
         
         clearTimeout(timeout);
@@ -272,17 +244,12 @@ export class ZKProofGenerator {
     });
   }
 
-  /**
-   * Generate mock proof (replace with actual snarkjs in production)
-   */
   private async generateMockProof(
     circuit: string,
     inputs: any
   ): Promise<{ proof: any; publicSignals: any[] }> {
-    // Simulate computation time
     await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
 
-    // Create realistic-looking proof structure
     const proof = {
       pi_a: [
         this.randomFieldElement(),
@@ -303,30 +270,22 @@ export class ZKProofGenerator {
       curve: "bn128"
     };
 
-    // Extract public signals from inputs
-    const publicSignals = Object.values(inputs).slice(0, 2).map(v => v.toString());
+    const publicSignals = Object.values(inputs).slice(0, 2).map((v: any) => v.toString());
 
     return { proof, publicSignals };
   }
 
-  /**
-   * Load verification key
-   */
   private async loadVerificationKey(circuit: string): Promise<any> {
     try {
       const vkeyPath = join(CONFIG.circuits.path, `${circuit}_vkey.json`);
       const vkeyData = await readFile(vkeyPath, 'utf-8');
       return JSON.parse(vkeyData);
     } catch (error) {
-      // Return mock verification key for development
       console.warn(`⚠️ Using mock verification key for ${circuit}`);
       return this.getMockVerificationKey();
     }
   }
 
-  /**
-   * Mock verification key
-   */
   private getMockVerificationKey(): any {
     return {
       protocol: "groth16",
@@ -355,9 +314,6 @@ export class ZKProofGenerator {
     };
   }
 
-  /**
-   * Helper: Convert string to field element
-   */
   private stringToFieldElement(str: string): string {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -367,9 +323,6 @@ export class ZKProofGenerator {
     return Math.abs(hash).toString();
   }
 
-  /**
-   * Helper: Generate random field element
-   */
   private randomFieldElement(): string {
     return BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)).toString();
   }
