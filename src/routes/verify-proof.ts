@@ -16,13 +16,8 @@ const VerificationRequestSchema = z.object({
   circuit: z.enum(['hashPreimage', 'rangeProof', 'customArithmetic']),
 });
 
-/**
- * POST /api/verify-proof
- * Verify a ZK proof with payment
- */
 export async function verifyProofHandler(req: X402Request, res: Response) {
   try {
-    // Validate request body
     const validation = VerificationRequestSchema.safeParse(req.body);
     
     if (!validation.success) {
@@ -35,7 +30,6 @@ export async function verifyProofHandler(req: X402Request, res: Response) {
 
     const { proof, publicSignals, circuit } = validation.data;
 
-    // Verify payment was processed
     if (!req.x402Payment?.verified) {
       return res.status(500).json({
         error: 'Internal Server Error',
@@ -47,7 +41,6 @@ export async function verifyProofHandler(req: X402Request, res: Response) {
     console.log(`   Circuit: ${circuit}`);
     console.log(`   Payment: ${req.x402Payment.amount} USDC`);
 
-    // Verify the proof
     const verificationRequest: VerificationRequest = {
       proof,
       publicSignals,
@@ -64,7 +57,6 @@ export async function verifyProofHandler(req: X402Request, res: Response) {
       });
     }
 
-    // Build response
     const response = {
       success: true,
       verified: result.verified,
@@ -101,94 +93,19 @@ export async function verifyProofHandler(req: X402Request, res: Response) {
   }
 }
 
-/**
- * GET /api/verify-proof
- * Returns payment requirements and schema for proof verification
- */
 export function verifyProofInfoHandler(req: X402Request, res: Response) {
-  const outputSchema = {
-    input: {
-      type: 'http',
-      method: 'POST',
-      contentType: 'application/json',
-      bodyFields: {
-        proof: {
-          type: 'object',
-          required: true,
-          description: 'The zk-SNARK proof to verify (Groth16 format)',
-          properties: {
-            pi_a: { type: 'array', description: 'Proof element A' },
-            pi_b: { type: 'array', description: 'Proof element B' },
-            pi_c: { type: 'array', description: 'Proof element C' },
-            protocol: { type: 'string', description: 'groth16' },
-            curve: { type: 'string', description: 'bn128' },
-          },
-        },
-        publicSignals: {
-          type: 'array',
-          required: true,
-          description: 'Public signals from proof generation',
-        },
-        circuit: {
-          type: 'string',
-          required: true,
-          description: 'Circuit type used for proof generation',
-          enum: ['hashPreimage', 'rangeProof', 'customArithmetic'],
-        },
-      },
-    },
-    output: {
-      type: 'object',
-      description: 'Verification result',
-      properties: {
-        success: {
-          type: 'boolean',
-          description: 'Whether verification completed successfully',
-        },
-        verified: {
-          type: 'boolean',
-          description: 'Whether the proof is valid',
-        },
-        metadata: {
-          type: 'object',
-          description: 'Verification metadata',
-          properties: {
-            circuit: { type: 'string', description: 'Circuit used' },
-            executionTime: { type: 'number', description: 'Verification time in ms' },
-            verifiedAt: { type: 'number', description: 'Unix timestamp' },
-          },
-        },
-        payment: {
-          type: 'object',
-          description: 'Payment information',
-        },
-        result: {
-          type: 'object',
-          description: 'Human-readable result',
-          properties: {
-            valid: { type: 'boolean', description: 'Is the proof valid' },
-            message: { type: 'string', description: 'Result message' },
-          },
-        },
-      },
-    },
-  };
-
+  const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  
   res.status(402).json({
-    x402Version: CONFIG.x402.version,
-    accepts: [
-      {
-        scheme: 'eip3009',
-        network: CONFIG.network.name,
-        maxAmountRequired: CONFIG.pricing.basic.priceUSDC,
-        resource: `${req.protocol}://${req.get('host')}${req.originalUrl}`,
-        description: 'Verify zero-knowledge proof',
-        mimeType: 'application/json',
-        payTo: CONFIG.wallets.base,
-        maxTimeoutSeconds: 30,
-        asset: CONFIG.network.usdcAddress,
-        outputSchema,
-      },
-    ],
+    error: "Payment Required",
+    message: "Verify zero-knowledge proof",
+    paymentRequirement: {
+      maxAmountRequired: CONFIG.pricing.basic.priceUSDC,
+      resource: fullUrl,
+      payTo: CONFIG.wallets.base,
+      asset: CONFIG.network.usdcAddress,
+      network: CONFIG.network.name,
+      scheme: "eip3009"
+    }
   });
 }
