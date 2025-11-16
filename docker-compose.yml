@@ -2,21 +2,38 @@ version: '3.8'
 
 services:
   lucid-oracle:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-    env_file:
-      - .env
+      - PORT=3000
+      - HOST=0.0.0.0
+      - AGENT_WALLET_ADDRESS_BASE=0x11c24Fbcd702cd611729F8402d8fB51ECa75Ba83
+      - AGENT_WALLET_ADDRESS_ETH=0x11c24Fbcd702cd611729F8402d8fB51ECa75Ba83
+      - AGENT_WALLET_ADDRESS_SOLANA=2x4BRUreTFZCaCKbGKVXFYD5p2ZUBpYaYjuYsw9KYhf3
+      - NETWORK_NAME=base
+      - CHAIN_ID=8453
+      - RPC_URL=https://mainnet.base.org
+      - USDC_ADDRESS=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+      - X402_FACILITATOR=https://facilitator.daydreams.systems
+      - X402_VERSION=1
+      - CIRCUIT_PATH=./circuits
+      - CIRCUIT_TIMEOUT_MS=60000
+      - PRICE_BASIC=20000
+      - PRICE_STANDARD=50000
+      - PRICE_PREMIUM=100000
+      - RATE_LIMIT_WINDOW_MS=60000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - LOG_LEVEL=info
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 5s
+      start_period: 10s
     volumes:
       - ./circuits:/app/circuits:ro
-```
-
