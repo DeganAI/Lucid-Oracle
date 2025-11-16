@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  lucid-oracle:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - ./circuits:/app/circuits:ro
+```
+
+## 📁 File 24: `.dockerignore`
+```
+node_modules
+npm-debug.log
+dist
+.env
+.env.local
+.git
+.gitignore
+README.md
+.DS_Store
+*.md
+.vscode
+.idea
