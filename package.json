@@ -1,0 +1,46 @@
+{
+  "name": "lucid-oracle",
+  "version": "1.0.0",
+  "description": "Production-ready ZK proof generation service with x402 micropayments on Base L2",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "zero-knowledge",
+    "zk-snark",
+    "x402",
+    "micropayments",
+    "base-l2",
+    "daydreams",
+    "lucid-agents"
+  ],
+  "author": "Nate",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "viem": "^2.21.0",
+    "snarkjs": "^0.7.4",
+    "circomlibjs": "^0.1.7",
+    "nanoid": "^5.0.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "typescript": "^5.5.4",
+    "tsx": "^4.19.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
