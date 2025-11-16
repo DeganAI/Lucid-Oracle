@@ -20,17 +20,3 @@ services:
       - ./circuits:/app/circuits:ro
 ```
 
-## 📁 File 24: `.dockerignore`
-```
-node_modules
-npm-debug.log
-dist
-.env
-.env.local
-.git
-.gitignore
-README.md
-.DS_Store
-*.md
-.vscode
-.idea
