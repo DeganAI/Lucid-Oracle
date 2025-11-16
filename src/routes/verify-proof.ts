@@ -94,7 +94,8 @@ export async function verifyProofHandler(req: X402Request, res: Response) {
 }
 
 export function verifyProofInfoHandler(req: X402Request, res: Response) {
-  const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  const protocol = req.protocol === 'http' && req.get('host')?.includes('railway.app') ? 'https' : req.protocol;
+  const fullUrl = `${protocol}://${req.get('host')}${req.originalUrl}`;
   
   res.status(402).json({
     error: "Payment Required",
@@ -105,7 +106,7 @@ export function verifyProofInfoHandler(req: X402Request, res: Response) {
       payTo: CONFIG.wallets.base,
       asset: CONFIG.network.usdcAddress,
       network: CONFIG.network.name,
-      scheme: "eip3009"
+      scheme: "exact"
     }
   });
 }
