@@ -98,15 +98,57 @@ export function verifyProofInfoHandler(req: X402Request, res: Response) {
   const fullUrl = `${protocol}://${req.get('host')}${req.originalUrl}`;
   
   res.status(402).json({
+    x402Version: 1,
     error: "Payment Required",
-    message: "Verify zero-knowledge proof",
-    paymentRequirement: {
-      maxAmountRequired: CONFIG.pricing.basic.priceUSDC,
-      resource: fullUrl,
-      payTo: CONFIG.wallets.base,
-      asset: CONFIG.network.usdcAddress,
-      network: CONFIG.network.name,
-      scheme: "exact"
-    }
+    accepts: [
+      {
+        scheme: "exact",
+        network: "base",
+        maxAmountRequired: CONFIG.pricing.basic.priceUSDC,
+        resource: fullUrl,
+        description: "Verify zero-knowledge proof",
+        mimeType: "application/json",
+        payTo: CONFIG.wallets.base,
+        maxTimeoutSeconds: 30,
+        asset: CONFIG.network.usdcAddress,
+        outputSchema: {
+          input: {
+            type: "http",
+            method: "POST",
+            bodyType: "json",
+            bodyFields: {
+              proof: {
+                type: "object",
+                required: true,
+                description: "The zk-SNARK proof to verify (Groth16 format)"
+              },
+              publicSignals: {
+                type: "array",
+                required: true,
+                description: "Public signals from proof generation"
+              },
+              circuit: {
+                type: "string",
+                required: true,
+                description: "Circuit type used",
+                enum: ["hashPreimage", "rangeProof", "customArithmetic"]
+              }
+            }
+          },
+          output: {
+            success: { type: "boolean" },
+            verified: { type: "boolean", description: "Whether the proof is valid" },
+            metadata: {
+              type: "object",
+              properties: {
+                circuit: { type: "string" },
+                executionTime: { type: "number" },
+                verifiedAt: { type: "number" }
+              }
+            }
+          }
+        }
+      }
+    ]
   });
 }
